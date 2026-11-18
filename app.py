@@ -6,7 +6,7 @@ Dataset: Uber Pickups in NYC (April 2014 sample)
 Description: Interactive data explorer helping NYC Uber drivers identify peak pickup hours,
              expected shift volume, and spatial pickup clusters.
 LLMs Used: Gemini
-Streamlit Cloud URL: https://uber-driver-planner-cs230-bentley.streamlit.app/
+Streamlit Cloud URL: https://uber-driver-planner-cs230-bentley-nikoloz-salakaia.streamlit.app/
 """
 
 import streamlit as st
