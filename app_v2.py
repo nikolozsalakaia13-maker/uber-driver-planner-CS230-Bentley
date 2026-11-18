@@ -103,6 +103,19 @@ def hour_label(hour):
     else:
         return f"{hour - 12} PM"
 
+#[LOOP_VS_PANDAS] Loop + dictionary version of the hourly count 
+def count_pickups_by_hour_loop(day_df):
+    """
+    Count pickups for each hour using a loop and a dictionary.
+    Input: day_df (DataFrame of pickups for one day)
+    Output: dictionary like {0: 9, 1: 6, ...} with all 24 hours
+    """
+    counts = {}                  #empty dictionary: the key is the hour, the value is the pickup count
+    for hour in range(24):
+        counts[hour] = 0         #give every hour a starting count of 0
+    for hour in day_df["Hour"]:
+        counts[hour] += 1        #go through each pickup's hour and add 1 to that hour's count
+    return counts
 
 # --- 3. QUESTION 1 ---
 def show_question_1(df, selected_day):
@@ -125,6 +138,23 @@ def show_question_1(df, selected_day):
         .reindex(range(24), fill_value=0)
         .reset_index(name="Total Pickups")
     )
+
+    #[LOOP_VS_PANDAS] Same question answered twice: loop + dictionary vs Pandas groupby
+    loop_counts = count_pickups_by_hour_loop(q1_df)                                              #loop answer
+    pandas_counts = q1_df.groupby("Hour").size().reindex(range(24), fill_value=0).to_dict()      #pandas answer: group by hour, count rows, fill missing hours with 0, make it a dictionary
+    with st.expander("Verify Loop + Dictionary vs. Pandas (hourly counts)"):                     #show the check in a collapsed box
+        if loop_counts == pandas_counts:
+            st.success("Both methods give the same pickups for all 24 hours.")                   #if the dictionaries are identical, both methods agree on all 24 hours
+        else:
+            st.error("The two methods give different results. Check the code.")
+        
+        compare_df = pd.DataFrame({                                                              #build a table with one row per hour
+            "Hour": [hour_label(h) for h in range(24)],                                          #readable hour labels, like 12 AM and 5 PM
+            "Loop + Dictionary": [loop_counts[h] for h in range(24)],                            #the loop's count for each hour
+            "Pandas": [pandas_counts[h] for h in range(24)]                                      #Pandas's count for each hour
+        })
+        st.dataframe(compare_df, hide_index=True)  
+
 
     # ORIGINAL AI VERSION (nested lambda):
     # hourly_counts["Hour Label"] = hourly_counts["Hour"].apply(
@@ -221,29 +251,29 @@ def show_question_1(df, selected_day):
         )
 
 
-# --- 4. QUESTION 2 ---
+# --- 4. QUESTION 2 --- #[MANUAL_CALC]  loop for average, min and max --> checked against Pandas in the Q2 table
 def calculate_shift_stats_manual(counts_list):
     """
     Calculate average, minimum, and maximum pickups per hour using a loop.
     Input: counts_list (list of numeric pickup counts for each hour in the shift)
     Output: tuple (avg_val, min_val, max_val)
     """
-    total = 0
-    min_val = counts_list[0]
+    total = 0                   #running total used for avrg
+    min_val = counts_list[0]    #start min and max w first hour's count
     max_val = counts_list[0]
 
-    for count in counts_list:
-        total += count
-        if count < min_val:
+    for count in counts_list:   #look at one hour at a time
+        total += count          #add this hour to running total
+        if count < min_val:     #lower than lowest --> new min
             min_val = count
-        if count > max_val:
+        if count > max_val:     #higher than highest --> new max
             max_val = count
 
-    avg_val = total / len(counts_list)
+    avg_val = total / len(counts_list)      #average = total pickups divided by the number of hours
     return avg_val, min_val, max_val
 
 
-def show_question_2(df, selected_day, hour_range):
+def show_question_2(df, selected_day, hour_range):      #pandas built in version to compare w loop 
     """
     Show Question 2: expected pickups per hour across a chosen shift window.
     Input: df (cleaned DataFrame), selected_day (weekday name),
